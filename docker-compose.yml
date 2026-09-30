@@ -1,0 +1,12 @@
+services:
+  kfet:
+    build: .
+    container_name: kfet-commandes
+    restart: unless-stopped
+    ports:
+      - "30083:30083"
+    environment:
+      PORT: 30083
+      DATABASE_PATH: /app/data/kfet.db
+    volumes:
+      - ./data:/app/data
