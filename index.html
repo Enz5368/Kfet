@@ -1,0 +1,624 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Suivi des commandes — Cafétéria</title>
+  <style>
+    :root {
+      --ink: #17222d;
+      --muted: #66717d;
+      --paper: #fffdf8;
+      --line: #dfe3e6;
+      --blue: #164e63;
+      --orange: #f28c28;
+      --green: #1f7a52;
+      --red: #b63e3e;
+      --shadow: 0 12px 35px rgba(31, 42, 55, .10);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: #f2f0ea;
+      font: 16px/1.4 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 22px max(22px, calc((100vw - 1400px) / 2));
+      color: white;
+      background: var(--blue);
+    }
+
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 44px;
+      height: 44px;
+      border-radius: 13px;
+      background: var(--orange);
+      font-size: 24px;
+    }
+    h1 { margin: 0; font-size: 22px; letter-spacing: -.02em; }
+    .subtitle { margin: 2px 0 0; color: #c9dce3; font-size: 13px; }
+    #clock { font-weight: 700; font-variant-numeric: tabular-nums; }
+
+    main { width: min(1400px, calc(100% - 32px)); margin: 28px auto 60px; }
+
+    .tabs {
+      display: flex;
+      gap: 7px;
+      margin-bottom: 18px;
+      padding: 6px;
+      overflow-x: auto;
+      border: 1px solid #dedbd3;
+      border-radius: 14px;
+      background: rgba(255,255,255,.72);
+    }
+    .tab {
+      flex: 1;
+      min-width: 130px;
+      height: 44px;
+      border: 0;
+      border-radius: 9px;
+      color: var(--muted);
+      background: transparent;
+      font-weight: 800;
+    }
+    .tab:hover { background: #ecebe6; }
+    .tab.active { color: white; background: var(--blue); }
+    [data-pane] { display: none; }
+    [data-pane].active { display: block; }
+
+    .panel {
+      border: 1px solid #e5e1d8;
+      border-radius: 18px;
+      background: var(--paper);
+      box-shadow: var(--shadow);
+    }
+
+    .new-order { padding: 22px; }
+    .section-title { margin: 0 0 16px; font-size: 18px; }
+    .form-row {
+      display: grid;
+      grid-template-columns: minmax(170px, 1.2fr) repeat(5, minmax(120px, .75fr)) auto;
+      gap: 12px;
+      align-items: end;
+    }
+    label { display: block; color: var(--muted); font-size: 13px; font-weight: 700; }
+    input[type="text"] {
+      width: 100%;
+      height: 46px;
+      margin-top: 6px;
+      padding: 0 13px;
+      border: 1px solid #cfd5da;
+      border-radius: 10px;
+      color: var(--ink);
+      background: white;
+      outline: none;
+    }
+    input[type="text"]:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(22,78,99,.12); }
+
+    .counter {
+      display: grid;
+      grid-template-columns: 42px 1fr 42px;
+      height: 46px;
+      margin-top: 6px;
+      overflow: hidden;
+      border: 1px solid #cfd5da;
+      border-radius: 10px;
+      background: white;
+    }
+    .counter button { border: 0; background: #eef1f2; color: var(--blue); font-size: 21px; font-weight: 800; }
+    .counter button:hover { background: #dfe8eb; }
+    .counter output { display: grid; place-items: center; font-weight: 800; }
+    .food-label { display: flex; justify-content: space-between; }
+    .food-label span { font-weight: 500; }
+
+    .primary {
+      height: 46px;
+      padding: 0 22px;
+      border: 0;
+      border-radius: 10px;
+      color: white;
+      background: var(--orange);
+      font-weight: 800;
+      white-space: nowrap;
+    }
+    .primary:hover { background: #df7814; }
+
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 18px 0; }
+    .stat { padding: 16px 18px; border: 1px solid #e2ded5; border-radius: 14px; background: rgba(255,255,255,.72); }
+    .stat b { display: block; font-size: 27px; line-height: 1; }
+    .stat span { color: var(--muted); font-size: 13px; }
+
+    .orders { overflow: hidden; }
+    .orders-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--line);
+    }
+    .orders-head h2 { margin: 0; font-size: 18px; }
+    .tools { display: flex; gap: 9px; }
+    .tools input { width: 210px; height: 38px; margin: 0; }
+    .quiet {
+      height: 38px;
+      padding: 0 13px;
+      border: 1px solid #cfd5da;
+      border-radius: 9px;
+      background: white;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .quiet:hover { color: var(--red); border-color: #e0b9b9; }
+
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 14px 15px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: middle; }
+    th { color: var(--muted); background: #f7f6f2; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; }
+    tbody tr:last-child td { border-bottom: 0; }
+    tbody tr:hover { background: #fffaf0; }
+    .number { width: 54px; color: var(--muted); font-weight: 800; }
+    .client strong { display: block; }
+    .client small { color: var(--muted); }
+    .order-items { font-weight: 650; }
+    .done-row { opacity: .58; }
+
+    .check-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 112px;
+      height: 38px;
+      padding: 0 12px;
+      border: 1px solid #ccd2d6;
+      border-radius: 9px;
+      background: white;
+      color: #58636d;
+      font-size: 13px;
+      font-weight: 750;
+    }
+    .check-btn::before {
+      content: '';
+      width: 16px;
+      height: 16px;
+      border: 2px solid #aeb7bd;
+      border-radius: 5px;
+    }
+    .check-btn.active { color: var(--green); border-color: #a8d6c0; background: #edf8f2; }
+    .check-btn.active::before { content: '✓'; display: grid; place-items: center; color: white; border-color: var(--green); background: var(--green); font-size: 12px; }
+    .check-btn:disabled { cursor: not-allowed; opacity: .4; }
+
+    .delete {
+      width: 36px;
+      height: 36px;
+      border: 0;
+      border-radius: 8px;
+      color: #8b949b;
+      background: transparent;
+      font-size: 18px;
+    }
+    .delete:hover { color: var(--red); background: #fff0f0; }
+    .empty { padding: 55px 20px; color: var(--muted); text-align: center; }
+    .empty b { display: block; margin-bottom: 5px; color: var(--ink); font-size: 18px; }
+
+    .toast {
+      position: fixed;
+      right: 22px;
+      bottom: 22px;
+      padding: 12px 16px;
+      border-radius: 10px;
+      color: white;
+      background: var(--ink);
+      box-shadow: var(--shadow);
+      transform: translateY(90px);
+      opacity: 0;
+      transition: .2s ease;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+
+    .stock-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; padding: 22px; }
+    .stock-card { padding: 22px; border: 1px solid var(--line); border-radius: 15px; background: white; text-align: center; }
+    .stock-icon { font-size: 36px; }
+    .stock-card h3 { margin: 6px 0 0; }
+    .stock-count { display: block; margin: 10px 0 2px; color: var(--blue); font-size: 42px; font-weight: 850; }
+    .stock-card small { color: var(--muted); }
+    .stock-actions { display: flex; justify-content: center; gap: 8px; margin-top: 16px; }
+    .stock-actions button { width: 44px; height: 40px; border: 1px solid #ccd2d6; border-radius: 9px; background: #f7f8f8; color: var(--blue); font-size: 20px; font-weight: 800; }
+    .stock-actions button:hover { background: #e5edef; }
+    .stock-note { margin: 0; padding: 0 22px 22px; color: var(--muted); font-size: 13px; text-align: center; }
+
+    .status-text { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 13px; font-weight: 700; }
+    .status-text.done { color: var(--green); }
+
+    @media (max-width: 900px) {
+      .form-row { grid-template-columns: 1fr 1fr; }
+      .client-field, .primary { grid-column: 1 / -1; }
+      .stats { grid-template-columns: 1fr 1fr; }
+      .stock-grid { grid-template-columns: 1fr; }
+      .table-wrap { overflow-x: auto; }
+      table { min-width: 850px; }
+    }
+    @media (max-width: 560px) {
+      .topbar { padding: 16px; }
+      #clock { display: none; }
+      main { width: min(100% - 20px, 1400px); margin-top: 12px; }
+      .new-order { padding: 16px; }
+      .form-row { grid-template-columns: 1fr; }
+      .client-field, .primary { grid-column: auto; }
+      .orders-head { align-items: stretch; flex-direction: column; }
+      .tools input { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">☕</div>
+      <div>
+        <h1>La Cafétéria</h1>
+        <p class="subtitle">Suivi des commandes</p>
+      </div>
+    </div>
+    <div id="clock"></div>
+  </header>
+
+  <main>
+    <nav class="tabs" aria-label="Postes">
+      <button class="tab active" data-tab="orders" type="button">Commandes</button>
+      <button class="tab" data-tab="payments" type="button">Paiements</button>
+      <button class="tab" data-tab="kitchen" type="button">Cuisine</button>
+      <button class="tab" data-tab="stock" type="button">Stock</button>
+    </nav>
+
+    <section class="panel new-order active" data-pane="orders">
+      <h2 class="section-title">Nouvelle commande</h2>
+      <form id="orderForm" class="form-row">
+        <label class="client-field">Nom du client
+          <input id="client" type="text" placeholder="Ex. Lucas" autocomplete="off" required autofocus>
+        </label>
+
+        <label>Pizza saumon
+          <span class="counter">
+            <button type="button" data-item="pizzaSaumon" data-step="-1" aria-label="Retirer une pizza saumon">−</button>
+            <output id="pizzaSaumon">0</output>
+            <button type="button" data-item="pizzaSaumon" data-step="1" aria-label="Ajouter une pizza saumon">+</button>
+          </span>
+        </label>
+
+        <label>Pizza thon
+          <span class="counter">
+            <button type="button" data-item="pizzaThon" data-step="-1" aria-label="Retirer une pizza thon">−</button>
+            <output id="pizzaThon">0</output>
+            <button type="button" data-item="pizzaThon" data-step="1" aria-label="Ajouter une pizza thon">+</button>
+          </span>
+        </label>
+
+        <label>Pizza royale
+          <span class="counter">
+            <button type="button" data-item="pizzaRoyale" data-step="-1" aria-label="Retirer une pizza royale">−</button>
+            <output id="pizzaRoyale">0</output>
+            <button type="button" data-item="pizzaRoyale" data-step="1" aria-label="Ajouter une pizza royale">+</button>
+          </span>
+        </label>
+
+        <label>Croque
+          <span class="counter">
+            <button type="button" data-item="croque" data-step="-1" aria-label="Retirer un croque">−</button>
+            <output id="croque">0</output>
+            <button type="button" data-item="croque" data-step="1" aria-label="Ajouter un croque">+</button>
+          </span>
+        </label>
+
+        <label>Nuggets <span>(portions)</span>
+          <span class="counter">
+            <button type="button" data-item="nuggets" data-step="-1" aria-label="Retirer une portion de nuggets">−</button>
+            <output id="nuggets">0</output>
+            <button type="button" data-item="nuggets" data-step="1" aria-label="Ajouter une portion de nuggets">+</button>
+          </span>
+        </label>
+
+        <button class="primary" type="submit">Ajouter la commande</button>
+      </form>
+    </section>
+
+    <section class="stats active" data-pane="orders" aria-label="Résumé">
+      <div class="stat"><b id="statTotal">0</b><span>commandes en cours</span></div>
+      <div class="stat"><b id="statUnpaid">0</b><span>à encaisser</span></div>
+      <div class="stat"><b id="statOven">0</b><span>à enfourner</span></div>
+      <div class="stat"><b id="statDeliver">0</b><span>à livrer</span></div>
+    </section>
+
+    <section class="panel orders active" data-pane="orders">
+      <div class="orders-head">
+        <h2>Commandes du jour</h2>
+        <div class="tools">
+          <input id="search" type="text" placeholder="Rechercher un client…" aria-label="Rechercher">
+          <button id="clearDone" class="quiet" type="button">Effacer les livrées</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>N°</th>
+              <th>Client</th>
+              <th>Commande</th>
+              <th class="col-paid">Payé</th>
+              <th class="col-baked">Enfourné</th>
+              <th class="col-delivered">Livré</th>
+              <th class="col-delete"></th>
+            </tr>
+          </thead>
+          <tbody id="orderList"></tbody>
+        </table>
+        <div id="empty" class="empty" hidden>
+          <b>Aucune commande</b>
+          La prochaine commande apparaîtra ici.
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" data-pane="payments">
+      <div class="orders-head"><h2>Poste paiements</h2><span>Cliquer dès que le client a payé</span></div>
+      <div class="table-wrap"><table><thead><tr><th>N°</th><th>Client</th><th>Commande</th><th>État</th></tr></thead><tbody id="paymentList"></tbody></table><div id="paymentEmpty" class="empty" hidden><b>Aucun paiement en attente</b>Toutes les commandes sont encaissées.</div></div>
+    </section>
+
+    <section class="panel" data-pane="kitchen">
+      <div class="orders-head"><h2>Poste cuisine</h2><span>Suivi de la préparation et de la livraison</span></div>
+      <div class="table-wrap"><table><thead><tr><th>N°</th><th>Client</th><th>Commande</th><th>Enfourné</th><th>Livré</th></tr></thead><tbody id="kitchenList"></tbody></table><div id="kitchenEmpty" class="empty" hidden><b>Aucune commande à préparer</b>Les nouvelles commandes apparaîtront ici.</div></div>
+    </section>
+
+    <section class="panel" data-pane="stock">
+      <div class="orders-head"><h2>Stock disponible</h2><span>Les quantités baissent à chaque commande</span></div>
+      <div id="stockGrid" class="stock-grid"></div>
+      <p class="stock-note">Utilise −1, +1 ou +10 pour corriger les quantités après un arrivage ou un comptage.</p>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status"></div>
+
+  <script>
+    const STORAGE_KEY = 'cafeteria-commandes-v1';
+    const STOCK_KEY = 'cafeteria-stock-v1';
+    const quantities = { pizzaSaumon: 0, pizzaThon: 0, pizzaRoyale: 0, croque: 0, nuggets: 0 };
+    let orders = loadOrders();
+    let stock = loadStock();
+
+    const list = document.querySelector('#orderList');
+    const empty = document.querySelector('#empty');
+    const search = document.querySelector('#search');
+
+    function loadStock() {
+      const defaults = { pizza: 0, pizzaSaumon: 25, pizzaThon: 25, pizzaRoyale: 25, croque: 25, nuggets: 25 };
+      try { return { ...defaults, ...(JSON.parse(localStorage.getItem(STOCK_KEY)) || {}) }; }
+      catch { return defaults; }
+    }
+
+    function loadOrders() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+      catch { return []; }
+    }
+
+    function saveOrders() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
+    }
+
+    function saveStock() {
+      localStorage.setItem(STOCK_KEY, JSON.stringify(stock));
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>'"]/g, char => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+      })[char]);
+    }
+
+    function itemText(items) {
+      const labels = { pizza: 'Pizza', pizzaSaumon: 'Pizza saumon', pizzaThon: 'Pizza thon', pizzaRoyale: 'Pizza royale', croque: 'Croque', nuggets: 'Nuggets' };
+      return Object.entries(items)
+        .filter(([, count]) => count > 0)
+        .map(([name, count]) => `${count} × ${labels[name]}`)
+        .join(' · ');
+    }
+
+    function button(order, field, label, disabled = false) {
+      return `<button class="check-btn ${order[field] ? 'active' : ''}" data-action="${field}" data-id="${order.id}" ${disabled ? 'disabled' : ''}>${label}</button>`;
+    }
+
+    function status(done, yes, no) {
+      return `<span class="status-text ${done ? 'done' : ''}">${done ? '✓ ' + yes : '○ ' + no}</span>`;
+    }
+
+    function render() {
+      const query = search.value.trim().toLocaleLowerCase('fr');
+      const shown = orders.filter(order => order.client.toLocaleLowerCase('fr').includes(query));
+
+      list.innerHTML = shown.map((order) => `
+        <tr class="${order.delivered ? 'done-row' : ''}">
+          <td class="number">${order.number}</td>
+          <td class="client"><strong>${escapeHtml(order.client)}</strong><small>${order.time}</small></td>
+          <td class="order-items">${itemText(order.items)}</td>
+          <td>${status(order.paid, 'Payé', 'En attente')}</td>
+          <td>${status(order.baked, 'Enfourné', 'À préparer')}</td>
+          <td>${button(order, 'delivered', 'Livré', !order.baked)}</td>
+          <td><button class="delete" data-action="delete" data-id="${order.id}" title="Supprimer" aria-label="Supprimer la commande">×</button></td>
+        </tr>
+      `).join('');
+
+      empty.hidden = shown.length !== 0;
+      document.querySelector('table').hidden = shown.length === 0;
+
+      const active = orders.filter(order => !order.delivered);
+      document.querySelector('#statTotal').textContent = active.length;
+      document.querySelector('#statUnpaid').textContent = active.filter(order => !order.paid).length;
+      document.querySelector('#statOven').textContent = active.filter(order => !order.baked).length;
+      document.querySelector('#statDeliver').textContent = active.filter(order => order.baked).length;
+
+      const unpaid = orders.filter(order => !order.paid && !order.delivered);
+      document.querySelector('#paymentList').innerHTML = unpaid.map(order => `
+        <tr><td class="number">${order.number}</td><td class="client"><strong>${escapeHtml(order.client)}</strong><small>${order.time}</small></td><td class="order-items">${itemText(order.items)}</td><td>${button(order, 'paid', 'Marquer payé')}</td></tr>
+      `).join('');
+      document.querySelector('#paymentEmpty').hidden = unpaid.length !== 0;
+      document.querySelector('#paymentList').closest('table').hidden = unpaid.length === 0;
+
+      const kitchen = orders.filter(order => !order.delivered);
+      document.querySelector('#kitchenList').innerHTML = kitchen.map(order => `
+        <tr><td class="number">${order.number}</td><td class="client"><strong>${escapeHtml(order.client)}</strong><small>${order.paid ? '<span class="status-text done">✓ Payé</span>' : '<span class="status-text">Non payé</span>'}</small></td><td class="order-items">${itemText(order.items)}</td><td>${button(order, 'baked', 'Enfourné')}</td><td>${button(order, 'delivered', 'Livré', !order.baked)}</td></tr>
+      `).join('');
+      document.querySelector('#kitchenEmpty').hidden = kitchen.length !== 0;
+      document.querySelector('#kitchenList').closest('table').hidden = kitchen.length === 0;
+
+      renderStock();
+    }
+
+    function renderStock() {
+      const info = {
+        pizzaSaumon: { label: 'Pizzas saumon', icon: '🍕' },
+        pizzaThon: { label: 'Pizzas thon', icon: '🍕' },
+        pizzaRoyale: { label: 'Pizzas royales', icon: '🍕' },
+        croque: { label: 'Croques', icon: '🥪' },
+        nuggets: { label: 'Portions de nuggets', icon: '🍗' }
+      };
+      document.querySelector('#stockGrid').innerHTML = Object.entries(info).map(([item, details]) => `
+        <article class="stock-card">
+          <div class="stock-icon">${details.icon}</div><h3>${details.label}</h3>
+          <output class="stock-count">${stock[item]}</output><small>en stock</small>
+          <div class="stock-actions">
+            <button type="button" data-stock="${item}" data-change="-1">−</button>
+            <button type="button" data-stock="${item}" data-change="1">+1</button>
+            <button type="button" data-stock="${item}" data-change="10">+10</button>
+          </div>
+        </article>
+      `).join('');
+    }
+
+    function notify(message) {
+      const toast = document.querySelector('#toast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      clearTimeout(notify.timer);
+      notify.timer = setTimeout(() => toast.classList.remove('show'), 1800);
+    }
+
+    document.querySelectorAll('[data-step]').forEach(button => {
+      button.addEventListener('click', () => {
+        const item = button.dataset.item;
+        quantities[item] = Math.max(0, quantities[item] + Number(button.dataset.step));
+        document.querySelector(`#${item}`).textContent = quantities[item];
+      });
+    });
+
+    document.querySelector('#orderForm').addEventListener('submit', event => {
+      event.preventDefault();
+      const clientInput = document.querySelector('#client');
+      const client = clientInput.value.trim();
+      if (!Object.values(quantities).some(Boolean)) {
+        notify('Ajoute au moins un produit');
+        return;
+      }
+      const missing = Object.keys(quantities).find(item => quantities[item] > stock[item]);
+      if (missing) {
+        const labels = { pizzaSaumon: 'pizza saumon', pizzaThon: 'pizza thon', pizzaRoyale: 'pizza royale', croque: 'croque', nuggets: 'nuggets' };
+        notify(`Stock insuffisant : ${labels[missing]}`);
+        return;
+      }
+
+      const today = new Date().toLocaleDateString('fr-FR');
+      const todaysNumbers = orders.filter(order => order.date === today).map(order => order.number);
+      orders.unshift({
+        id: Date.now(),
+        number: todaysNumbers.length ? Math.max(...todaysNumbers) + 1 : 1,
+        client,
+        items: { ...quantities },
+        paid: false,
+        baked: false,
+        delivered: false,
+        time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+        date: today
+      });
+
+      Object.keys(quantities).forEach(item => stock[item] -= quantities[item]);
+      saveOrders();
+      saveStock();
+      render();
+      clientInput.value = '';
+      Object.keys(quantities).forEach(item => {
+        quantities[item] = 0;
+        document.querySelector(`#${item}`).textContent = '0';
+      });
+      clientInput.focus();
+      notify(`Commande de ${client} ajoutée`);
+    });
+
+    document.querySelector('main').addEventListener('click', event => {
+      const tab = event.target.closest('[data-tab]');
+      if (tab) {
+        document.querySelectorAll('[data-tab]').forEach(item => item.classList.toggle('active', item === tab));
+        document.querySelectorAll('[data-pane]').forEach(pane => pane.classList.toggle('active', pane.dataset.pane === tab.dataset.tab));
+        return;
+      }
+
+      const stockButton = event.target.closest('[data-stock]');
+      if (stockButton) {
+        const item = stockButton.dataset.stock;
+        stock[item] = Math.max(0, stock[item] + Number(stockButton.dataset.change));
+        saveStock();
+        renderStock();
+        return;
+      }
+
+      const button = event.target.closest('button[data-action]');
+      if (!button) return;
+      const order = orders.find(item => item.id === Number(button.dataset.id));
+      if (!order) return;
+
+      if (button.dataset.action === 'delete') {
+        if (!confirm(`Supprimer la commande de ${order.client} ?`)) return;
+        Object.keys(order.items).forEach(item => stock[item] += order.items[item]);
+        orders = orders.filter(item => item.id !== order.id);
+        saveStock();
+      } else {
+        order[button.dataset.action] = !order[button.dataset.action];
+        if (button.dataset.action === 'baked' && !order.baked) order.delivered = false;
+      }
+      saveOrders();
+      render();
+    });
+
+    document.querySelector('#clearDone').addEventListener('click', () => {
+      const count = orders.filter(order => order.delivered).length;
+      if (!count) return notify('Aucune commande livrée à effacer');
+      if (!confirm(`Effacer ${count} commande${count > 1 ? 's' : ''} livrée${count > 1 ? 's' : ''} ?`)) return;
+      orders = orders.filter(order => !order.delivered);
+      saveOrders();
+      render();
+    });
+
+    search.addEventListener('input', render);
+
+    function updateClock() {
+      const now = new Date();
+      document.querySelector('#clock').textContent = now.toLocaleDateString('fr-FR', {
+        weekday: 'long', day: 'numeric', month: 'long'
+      }) + ' · ' + now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    }
+    updateClock();
+    setInterval(updateClock, 30000);
+    render();
+  </script>
+</body>
+</html>
