@@ -23,4 +23,4 @@ app.use(express.json({limit:'1mb'}));app.use(express.static(path.join(__dirname,
 app.get('/api/state',(req,res)=>res.json(state()));
 app.put('/api/state',(req,res)=>{try{replaceState(req.body);const current=state();io.emit('state:changed',current);res.json(current)}catch(error){res.status(400).json({error:error.message})}});
 io.on('connection',socket=>socket.emit('state:changed',state()));
-const port=Number(process.env.PORT||30083);server.listen(port,()=>console.log(`Kfet listening on ${port}`));
+const port=Number(process.env.PORT||3000);server.listen(port,()=>console.log(`Kfet listening on ${port}`));

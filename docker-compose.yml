@@ -1,12 +1,11 @@
 services:
   kfet:
-    build: .
-    container_name: kfet-commandes
+    build:
+      context: /mnt/Sites/kfet
+      dockerfile: Dockerfile
+    container_name: kfet-app
     restart: unless-stopped
     ports:
-      - "30083:30083"
-    environment:
-      PORT: 30083
-      DATABASE_PATH: /app/data/kfet.db
+      - "30083:3000"
     volumes:
-      - ./data:/app/data
+      - /mnt/Sites/kfet/data:/app/data
